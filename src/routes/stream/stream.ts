@@ -23,7 +23,7 @@ export function sentEvent(type: 'request' | 'response'): Response {
 		cancel() {
 			console.debug(`${type} stream cancel`);
 
-			httpEvent.off(type, callback);
+			httpEvent.removeAllListeners(type);
 			ac.abort();
 		}
 	});

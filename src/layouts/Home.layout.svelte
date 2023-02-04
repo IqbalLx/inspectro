@@ -7,16 +7,11 @@
 
 	import type { HTTPResponse } from 'entities/httpResponse.entity';
 
-	import {
-		requests,
-		responses,
-		loadDummyrequest,
-		loadDummyResponse,
-		getRequest
-	} from 'stores/http.store';
-	import { selectedRequest, setBaseUrl } from 'stores/home.store';
+	import { requests, responses } from 'stores/http.store';
+	import { selectedRequest, setBaseUrl, getBaseUrl } from 'stores/home.store';
 	import { baseURL } from 'stores/home.store';
 	import { browser } from '$app/environment';
+	import { fly } from 'svelte/transition';
 
 	let response: HTTPResponse | undefined;
 
@@ -28,12 +23,18 @@
 		}
 	}
 
-	async function getRequests() {
+	async function getRequestsStream() {
 		const eventSource = new EventSource('/stream/request');
 
 		eventSource.onmessage = (event) => {
+			const { date, ...restData } = JSON.parse(event.data);
+			const parsed = {
+				...restData,
+				date: new Date(date)
+			};
 			requests.update((arr) => {
-				arr.push(JSON.parse(event.data));
+				arr.push(parsed);
+
 				return arr;
 			});
 		};
@@ -43,7 +44,7 @@
 		};
 	}
 
-	async function getResponse() {
+	async function getResponseStream() {
 		const eventSource = new EventSource('/stream/response');
 
 		eventSource.onmessage = (event) => {
@@ -59,15 +60,22 @@
 	}
 
 	if (browser) {
-		getRequests();
-		getResponse();
+		getRequestsStream();
+		getResponseStream();
+		getBaseUrl(fetch);
 	}
 </script>
 
 <div class="container">
 	<div class="baseUrl">
 		<label for="search">Base URL</label>
-		<input type="text" id="text" name="text" placeholder="localhost:3000" bind:value={$baseURL} />
+		<input
+			type="text"
+			id="text"
+			name="text"
+			placeholder="http://localhost:3000"
+			bind:value={$baseURL}
+		/>
 		<a href="#" role="button" on:click={() => setBaseUrl(fetch, $baseURL)}>Set!</a>
 	</div>
 	<div class="grid">
@@ -77,9 +85,9 @@
 				{#if $requests.length === 0}
 					<article aria-busy="true">Waiting for a request ...</article>
 				{:else}
-					<table>
+					<table class="requestTable">
 						{#each $requests as request}
-							<tr><RequestCard {request} /></tr>
+							<tr transition:fly><RequestCard {request} /></tr>
 						{/each}
 					</table>
 				{/if}
@@ -91,20 +99,18 @@
 					<article aria-busy="true">Waiting for response ...</article>
 				{:else}
 					<ResponseSectionHeader {response} request={$selectedRequest} />
+					<div class="container">
+						<ResponseHeadersTable {response} />
 
-					<ResponseHeadersTable {response} />
-
-					<article>
-						<JsonView json={response.body} />
-					</article>
+						<article>
+							<JsonView json={response.body} />
+						</article>
+					</div>
 				{/if}
 			{/if}
 		</section>
 	</div>
 </div>
-
-<button on:click={loadDummyrequest}>Test</button>
-<button on:click={loadDummyResponse}>Test Resp</button>
 
 <style>
 	.container {
@@ -132,9 +138,15 @@
 	}
 	.response {
 		display: flex;
-		flex-direction: column;
+		flex-direction: row;
 		justify-content: space-evenly;
 		row-gap: 50px;
+		flex-wrap: wrap;
+	}
+
+	.response .container {
+		max-height: 200vh;
+		overflow-y: auto;
 	}
 
 	.request {
@@ -142,10 +154,22 @@
 		flex-direction: column;
 		align-items: flex-start;
 		justify-content: flex-start;
-		row-gap: 50px;
+		row-gap: 20px;
+	}
+
+	.request .container {
+		max-height: 200vh;
+		overflow-y: auto;
 	}
 
 	article {
 		margin: 0;
+	}
+
+	.requestTable {
+		display: flex;
+		flex-direction: column-reverse;
+		gap: 5px;
+		padding-right: 20px;
 	}
 </style>

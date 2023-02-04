@@ -10,7 +10,7 @@
 	<div>
 		<p><span class="statusCode">{response.statusCode} {response.statusText}</span></p>
 		<p>
-			{response.statusCode === 200 ? 'Success' : 'Failed'} after {response.time}ms
+			{response.statusCode >= 200 && response.statusCode < 400 ? 'Success' : 'Failed'} after {response.time}ms
 		</p>
 	</div>
 

@@ -33,12 +33,14 @@ class ProxyService {
 
 		const requestId = generateUUID();
 
+		const requestClone = event.request.clone();
+
 		// make body
 		let requestBody = {};
-		if (event.request.body !== null) {
+		if (requestClone.body !== null) {
 			try {
-				const buffer = await streamToArrayBuffer(event.request.body);
-				const contentType = event.request.headers.get('Content-Type');
+				const buffer = await streamToArrayBuffer(requestClone.body);
+				const contentType = requestClone.headers.get('Content-Type');
 				if (contentType === null) throw error(422, `unsupported Content-Type: ${contentType}`);
 				requestBody = decodeBuffer(buffer, contentType);
 			} catch (err) {
@@ -51,8 +53,8 @@ class ProxyService {
 			id: requestId,
 			url: proxiedUrl.toString(),
 			body: requestBody,
-			method: event.request.method,
-			headers: getHeaders(event.request.headers),
+			method: requestClone.method,
+			headers: getHeaders(requestClone.headers),
 			query: getQuery(proxiedUrl.searchParams),
 			date: startDate
 		};
@@ -61,16 +63,9 @@ class ProxyService {
 		// make response
 		let responseProxy: Response;
 		try {
-			responseProxy = await fetch(proxiedUrl.toString(), {
-				// propagate the request method and body
-				method: event.request.method,
-				headers: event.request.headers,
-				body: ['GET', 'HEAD'].includes(request.method) ? undefined : JSON.stringify(request.body)
-			});
-
-			console.debug(responseProxy.status);
+			console.debug(`${new Date()} fetching ${proxiedUrl.toString()}`);
+			responseProxy = await fetch(proxiedUrl.toString(), event.request);
 		} catch (error) {
-			console.debug(error);
 			responseProxy = new Response('Cant proxied request', {
 				status: 406
 			});
@@ -90,17 +85,19 @@ class ProxyService {
 			statusCode: responseProxy.status,
 			statusText: responseProxy.statusText,
 			time: responseTime,
-			headers: getHeaders(responseProxy.headers),
+			headers: {
+				...getHeaders(responseProxy.headers),
+				'x-inspectro-request-id': requestId
+			},
 			body: responseBody,
 			date: endDate
 		};
 		this.httpEvent.emit('response', response);
 
 		return new Response(JSON.stringify(response.body), {
-			headers: {
-				...response.headers,
-				'X-Inspectro-Request-ID': requestId
-			}
+			headers: response.headers as HeadersInit,
+			status: response.statusCode,
+			statusText: response.statusText
 		});
 	}
 }

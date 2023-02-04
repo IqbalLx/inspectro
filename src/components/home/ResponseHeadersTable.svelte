@@ -5,7 +5,7 @@
 </script>
 
 <div class="container">
-	<table>
+	<table role="grid">
 		<thead>
 			<th scope="col">Headers</th>
 			<th scope="col" />
@@ -20,3 +20,9 @@
 		</tbody>
 	</table>
 </div>
+
+<style>
+	.container table tbody tr td {
+		max-width: 400px;
+	}
+</style>

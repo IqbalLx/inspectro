@@ -1,5 +1,5 @@
 import { baseUrlRepo } from '../repository';
-import { APIService } from './api.service';
+import { APIService } from './baseUrl.service';
 import { httpEvent } from './httpEventEmitter';
 import { ProxyService } from './proxy.service';
 

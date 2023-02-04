@@ -4,9 +4,11 @@ import { writable } from 'svelte/store';
 export const selectedRequest = writable<HTTPRequest | undefined>();
 export const baseURL = writable<string | undefined>();
 
-// eslint-disable-next-line @typescript-eslint/ban-types
-export async function setBaseUrl(fetch: Function, baseUrl: string): Promise<void> {
-	await fetch('/api', {
+export async function setBaseUrl(
+	fetch: (input: RequestInfo | URL, init?: RequestInit | undefined) => Promise<Response>,
+	baseUrl: string
+): Promise<void> {
+	await fetch('/api/base_url', {
 		method: 'POST',
 		headers: {
 			'Content-Type': 'application/json'
@@ -15,4 +17,16 @@ export async function setBaseUrl(fetch: Function, baseUrl: string): Promise<void
 			base_url: baseUrl
 		})
 	});
+}
+
+export async function getBaseUrl(
+	fetch: (input: RequestInfo | URL, init?: RequestInit | undefined) => Promise<Response>
+) {
+	const res = await fetch('/api/base_url', { method: 'GET' });
+	if (res.status === 200) {
+		const json = (await res.json()) as { message: { base_url: string } };
+
+		console.log(json);
+		baseURL.set(json.message.base_url);
+	}
 }

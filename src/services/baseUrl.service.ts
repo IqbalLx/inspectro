@@ -29,6 +29,23 @@ class APIService {
 
 		return new Response(JSON.stringify({ message: 'OK' }), { status: 200 });
 	}
+
+	getBaseUrl(): Response {
+		const baseUrl = this.baseUrlRepo.getBaseUrl();
+		if (baseUrl === undefined)
+			return new Response(null, {
+				status: 204
+			});
+
+		return new Response(
+			JSON.stringify({
+				message: {
+					base_url: this.baseUrlRepo.getBaseUrl()
+				}
+			}),
+			{ status: 200 }
+		);
+	}
 }
 
 export { APIService };
