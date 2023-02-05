@@ -29,7 +29,7 @@ class ProxyService {
 
 		// build the new URL path with your API base URL, the stripped path and the query string
 		const urlPath = `${baseUrl}${strippedPath}${event.url.search}`;
-		const proxiedUrl = new URL(urlPath);
+		const destUrl = new URL(urlPath);
 
 		const requestId = generateUUID();
 
@@ -51,12 +51,12 @@ class ProxyService {
 		const startDate = new Date();
 		const request: HTTPRequest = {
 			id: requestId,
-			url: proxiedUrl.toString(),
+			url: destUrl.toString(),
 			proxyUrl: event.url.toString(),
 			body: requestBody,
 			method: requestClone.method,
 			headers: getHeaders(requestClone.headers),
-			query: getQuery(proxiedUrl.searchParams),
+			query: getQuery(destUrl.searchParams),
 			date: startDate
 		};
 		this.httpEvent.emit('request', request);
@@ -64,7 +64,7 @@ class ProxyService {
 		// make response
 		let responseProxy: Response;
 		try {
-			responseProxy = await fetch(proxiedUrl.toString(), event.request);
+			responseProxy = await fetch(destUrl.toString(), event.request);
 		} catch (error) {
 			responseProxy = new Response('Cant proxied request', {
 				status: 406

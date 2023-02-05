@@ -6,6 +6,6 @@ import { ReplayService } from './replay.service';
 
 const apiService = new APIService(baseUrlRepo);
 const proxyService = new ProxyService(baseUrlRepo, httpEvent);
-const replayService = new ReplayService();
+const replayService = new ReplayService(httpEvent);
 
 export { apiService, proxyService, replayService };
