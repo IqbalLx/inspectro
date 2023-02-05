@@ -1,5 +1,7 @@
 .vscode
 
+*.sh
+
 node_modules
 
 .svelte-kit
