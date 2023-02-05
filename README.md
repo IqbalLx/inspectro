@@ -13,4 +13,7 @@ Open browser at `http://localhost:7865`. Fire up another service you want to use
 
 Next change your base URL setting from Postman / your FE to `http://localhost:7865/proxy` this is inspectro proxy endpoint. Every API request to this endpoint will be proxied to your service, intercepting the request and response then display it to the dashboard via Server-Sent Events (SSE)
 
+> checkout the video: https://youtu.be/EahJEcM_Fxw
+
+
 Have fun!
