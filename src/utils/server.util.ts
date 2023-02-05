@@ -16,9 +16,14 @@ async function streamToArrayBuffer(stream: ReadableStream<Uint8Array>): Promise<
 	return result;
 }
 
-const SUPPORTED_TYPE = ['application/json'];
+const SUPPORTED_TYPE = [
+	'application/json',
+	'application/x-www-form-urlencoded',
+	'application/text'
+];
 function decodeBuffer(buffer: Uint8Array, contentType: string): object | string {
-	if (!SUPPORTED_TYPE.includes(contentType))
+	const parsedContentType = contentType.split(';')[0];
+	if (!SUPPORTED_TYPE.includes(parsedContentType))
 		throw new Error(`unsupported response type ${contentType}`);
 	const text = new TextDecoder().decode(buffer);
 	if (contentType === 'application/text') return text;

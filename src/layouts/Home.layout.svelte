@@ -7,15 +7,37 @@
 
 	import type { HTTPResponse } from 'entities/httpResponse.entity';
 
-	import { requests, responses } from 'stores/http.store';
-	import { selectedRequest, setBaseUrl, getBaseUrl } from 'stores/home.store';
-	import { baseURL } from 'stores/home.store';
-	import { browser } from '$app/environment';
+	import { requests, responses, filteredRequests } from 'stores/http.store';
+	import { selectedRequest, baseURL, setBaseUrl, getBaseUrl } from 'stores/home.store';
 	import { fly } from 'svelte/transition';
+	import { onMount } from 'svelte';
 
 	let response: HTTPResponse | undefined;
 
+	let inputBaseUrlMessage = 'Your Base URL seems empty. Enter valid URL then press set';
+	let baseUrlState: 'error' | 'neutral' | 'set' = 'neutral';
+	let inputInvalidValue: 'true' | 'false' | null = null;
+	let baseUrlSubmitting = false;
+
 	$: {
+		switch (baseUrlState) {
+			case 'neutral':
+				inputInvalidValue = null;
+				break;
+
+			case 'error':
+				inputInvalidValue = 'true';
+				break;
+
+			case 'set':
+				inputInvalidValue = 'false';
+				break;
+
+			default:
+				inputInvalidValue = null;
+				break;
+		}
+
 		if ($selectedRequest !== undefined) {
 			response = $responses.filter((response) => response.requestId === $selectedRequest?.id)[0];
 		} else {
@@ -59,34 +81,81 @@
 		};
 	}
 
-	if (browser) {
+	function isValidURL(url: string) {
+		const regex = /^(https?:\/\/)([\da-z\.-]+)(?::(\d+))?(\/[\w \.-]*)*\/?$/;
+		return regex.test(url);
+	}
+
+	async function doSetBaseUrl() {
+		if ($baseURL === undefined || $baseURL === '') {
+			inputBaseUrlMessage = "You haven't typed any base URL yet";
+			baseUrlState = 'error';
+			return;
+		}
+
+		if (!isValidURL($baseURL)) {
+			inputBaseUrlMessage = 'Please input valid base URL';
+			baseUrlState = 'error';
+			return;
+		}
+
+		try {
+			baseUrlSubmitting = true;
+			await setBaseUrl(fetch, $baseURL);
+			baseUrlSubmitting = false;
+
+			inputBaseUrlMessage = 'Base URL settled. Try making request to /proxy';
+			baseUrlState = 'set';
+			return;
+		} catch (error) {
+			inputBaseUrlMessage = 'Something wrong happened';
+			baseUrlState = 'error';
+			return;
+		}
+	}
+
+	onMount(async () => {
+		baseUrlSubmitting = true;
+		const savedBaseUrl = await getBaseUrl(fetch);
+		baseUrlSubmitting = false;
+		if (savedBaseUrl !== undefined) {
+			baseURL.set(savedBaseUrl);
+
+			inputBaseUrlMessage = 'Base URL settled. Try making request to /proxy';
+			baseUrlState = 'set';
+		}
+
 		getRequestsStream();
 		getResponseStream();
-		getBaseUrl(fetch);
-	}
+	});
 </script>
 
 <div class="container">
 	<div class="baseUrl">
 		<label for="search">Base URL</label>
-		<input
-			type="text"
-			id="text"
-			name="text"
-			placeholder="http://localhost:3000"
-			bind:value={$baseURL}
-		/>
-		<a href="#" role="button" on:click={() => setBaseUrl(fetch, $baseURL)}>Set!</a>
+		<span class="input">
+			<input
+				aria-busy={baseUrlSubmitting ? 'true' : 'false'}
+				aria-invalid={inputInvalidValue}
+				type="text"
+				id="text"
+				name="text"
+				placeholder="http://localhost:3000"
+				bind:value={$baseURL}
+			/>
+			<small>{inputBaseUrlMessage}</small>
+		</span>
+		<a href="#" role="button" on:click={doSetBaseUrl}>Set!</a>
 	</div>
 	<div class="grid">
 		<section class="request">
 			<RequestListHeader />
 			<div class="container">
-				{#if $requests.length === 0}
+				{#if $filteredRequests.length === 0}
 					<article aria-busy="true">Waiting for a request ...</article>
 				{:else}
 					<table class="requestTable">
-						{#each $requests as request}
+						{#each $filteredRequests as request}
 							<tr transition:fly><RequestCard {request} /></tr>
 						{/each}
 					</table>
@@ -123,9 +192,13 @@
 	.baseUrl {
 		display: flex;
 		justify-content: center;
-		justify-items: flex-start;
-		align-items: center;
+		justify-items: center;
+		align-items: flex-start;
 		gap: 20px;
+	}
+
+	.baseUrl label {
+		margin-top: 20px;
 	}
 
 	.baseUrl input {
@@ -133,19 +206,27 @@
 		margin: 0;
 	}
 
+	.baseUrl .input {
+		display: flex;
+		flex-direction: column;
+		gap: 20px;
+	}
+
 	section {
 		margin: 30px 0px;
 	}
 	.response {
 		display: flex;
-		flex-direction: row;
-		justify-content: space-evenly;
-		row-gap: 50px;
-		flex-wrap: wrap;
+		flex-direction: column;
+		row-gap: 20px;
+		justify-content: flex-start;
+		align-content: flex-start;
 	}
 
 	.response .container {
-		max-height: 200vh;
+		display: flex;
+		gap: 20px;
+		max-height: 100vh;
 		overflow-y: auto;
 	}
 
@@ -158,7 +239,7 @@
 	}
 
 	.request .container {
-		max-height: 200vh;
+		max-height: 100vh;
 		overflow-y: auto;
 	}
 

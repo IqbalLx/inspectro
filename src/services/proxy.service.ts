@@ -52,6 +52,7 @@ class ProxyService {
 		const request: HTTPRequest = {
 			id: requestId,
 			url: proxiedUrl.toString(),
+			proxyUrl: event.url.toString(),
 			body: requestBody,
 			method: requestClone.method,
 			headers: getHeaders(requestClone.headers),
@@ -63,7 +64,6 @@ class ProxyService {
 		// make response
 		let responseProxy: Response;
 		try {
-			console.debug(`${new Date()} fetching ${proxiedUrl.toString()}`);
 			responseProxy = await fetch(proxiedUrl.toString(), event.request);
 		} catch (error) {
 			responseProxy = new Response('Cant proxied request', {
@@ -74,19 +74,21 @@ class ProxyService {
 		const endDate = new Date();
 		const responseTime = Math.round(endDate.getTime() - startDate.getTime());
 
+		const responseClone = responseProxy.clone();
+
 		let responseBody = {};
 		try {
-			responseBody = await responseProxy.json();
+			responseBody = await responseClone.json();
 		} catch (error) {
 			responseBody = {};
 		}
 		const response: HTTPResponse = {
 			requestId,
-			statusCode: responseProxy.status,
-			statusText: responseProxy.statusText,
+			statusCode: responseClone.status,
+			statusText: responseClone.statusText,
 			time: responseTime,
 			headers: {
-				...getHeaders(responseProxy.headers),
+				...getHeaders(responseClone.headers),
 				'x-inspectro-request-id': requestId
 			},
 			body: responseBody,
@@ -94,11 +96,7 @@ class ProxyService {
 		};
 		this.httpEvent.emit('response', response);
 
-		return new Response(JSON.stringify(response.body), {
-			headers: response.headers as HeadersInit,
-			status: response.statusCode,
-			statusText: response.statusText
-		});
+		return responseProxy;
 	}
 }
 

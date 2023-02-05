@@ -21,12 +21,13 @@ export async function setBaseUrl(
 
 export async function getBaseUrl(
 	fetch: (input: RequestInfo | URL, init?: RequestInit | undefined) => Promise<Response>
-) {
+): Promise<string | undefined> {
 	const res = await fetch('/api/base_url', { method: 'GET' });
 	if (res.status === 200) {
 		const json = (await res.json()) as { message: { base_url: string } };
 
-		console.log(json);
-		baseURL.set(json.message.base_url);
+		return json.message.base_url;
 	}
+
+	return undefined;
 }

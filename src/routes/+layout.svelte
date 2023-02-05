@@ -4,10 +4,25 @@
 	import Nav from 'components/commons/Nav.svelte';
 </script>
 
-<Nav />
-
 <main class="container">
-	<slot />
+	<section>
+		<section>
+			<Nav />
+		</section>
+
+		<slot />
+	</section>
+
+	<section>
+		<Footer />
+	</section>
 </main>
 
-<Footer />
+<style>
+	.container {
+		display: flex;
+		flex-direction: column;
+		justify-content: space-between;
+		height: 100vh;
+	}
+</style>

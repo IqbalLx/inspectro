@@ -4,25 +4,31 @@
 	export let response: HTTPResponse;
 </script>
 
-<div class="container">
-	<table role="grid">
-		<thead>
-			<th scope="col">Headers</th>
-			<th scope="col" />
-		</thead>
-		<tbody>
-			{#each Object.entries(response.headers) as [key, value]}
-				<tr>
-					<th scope="row"><b>{key}</b></th>
-					<td>{value}</td>
-				</tr>
-			{/each}
-		</tbody>
-	</table>
-</div>
+<section id="accordion">
+	<details open>
+		<summary><strong>Response Headers</strong></summary>
+		<table role="grid">
+			<thead>
+				<th scope="col">Key</th>
+				<th scope="col">Value</th>
+			</thead>
+			<tbody>
+				{#each Object.entries(response.headers) as [key, value]}
+					<tr>
+						<th scope="row"><b>{key}</b></th>
+						<td>{value}</td>
+					</tr>
+				{/each}
+			</tbody>
+		</table>
+	</details>
+</section>
 
 <style>
-	.container table tbody tr td {
+	section {
+		margin: 0;
+	}
+	section table tbody tr td {
 		max-width: 400px;
 	}
 </style>

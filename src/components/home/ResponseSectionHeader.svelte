@@ -4,6 +4,24 @@
 
 	export let request: HTTPRequest;
 	export let response: HTTPResponse;
+
+	let isReplaying = false;
+
+	async function doReplayRequest() {
+		try {
+			isReplaying = true;
+			await fetch('/api/replay', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify(request)
+			});
+			isReplaying = false;
+		} catch (error) {
+			alert(`Error occured when trying to replay request. ${error}`);
+		}
+	}
 </script>
 
 <div class="container">
@@ -14,7 +32,14 @@
 		</p>
 	</div>
 
-	<a href="#" role="button">Replay</a>
+	<a
+		href="#"
+		role="button"
+		class:disable={isReplaying}
+		aria-busy={isReplaying ? 'true' : 'false'}
+		aria-invalid="true"
+		on:click={doReplayRequest}>{isReplaying ? '' : 'Replay'}</a
+	>
 </div>
 
 <style>
